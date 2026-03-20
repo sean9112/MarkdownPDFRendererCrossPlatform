@@ -1,0 +1,353 @@
+:root {
+  color-scheme: light;
+  font-family: "SF Pro TC", "SF Pro Text", "PingFang TC", "Noto Sans TC", sans-serif;
+  --bg: #faf9f5;
+  --bg-soft: #e8e6dc;
+  --text: #141413;
+  --muted: #b0aea5;
+  --accent: #d97757;
+  --accent-blue: #6a9bcc;
+  --accent-green: #788c5d;
+  --ui-text: #403c33;
+  --ui-text-soft: #7e7768;
+  --success: #6f8e4b;
+  --error: #d1775f;
+  --card: rgba(255, 255, 255, 0.74);
+  --border: rgba(176, 174, 165, 0.72);
+  --shadow: 0 24px 60px rgba(20, 20, 19, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(106, 155, 204, 0.18), transparent 30%),
+    radial-gradient(circle at top right, rgba(217, 119, 87, 0.16), transparent 32%),
+    linear-gradient(180deg, #fffdf9 0%, var(--bg) 46%, #f0eee7 100%);
+}
+
+code {
+  font-family: "SFMono-Regular", "JetBrains Mono", Consolas, monospace;
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  padding: 28px 24px 40px;
+}
+
+.backdrop-layer {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(106, 155, 204, 0.18), transparent 28%),
+    radial-gradient(circle at 86% 8%, rgba(217, 119, 87, 0.18), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(250, 249, 245, 0.78));
+  backdrop-filter: blur(24px);
+  pointer-events: none;
+}
+
+.app-frame {
+  position: relative;
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.header,
+.status-strip,
+.preview-shell,
+.runtime-note,
+.menu-panel {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--card);
+  backdrop-filter: blur(22px);
+  box-shadow: var(--shadow);
+}
+
+.header {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 26px;
+}
+
+.title-block {
+  min-width: 0;
+}
+
+.title-block h1 {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.04em;
+}
+
+.title-block p {
+  max-width: 720px;
+  margin: 8px 0 0;
+  color: var(--ui-text-soft);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.title-block p code {
+  display: inline-block;
+  padding: 0.12rem 0.42rem;
+  border-radius: 8px;
+  background: rgba(232, 230, 220, 0.94);
+  color: var(--ui-text);
+  box-shadow: inset 0 0 0 1px rgba(176, 174, 165, 0.52);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.import-menu {
+  position: relative;
+}
+
+.glass-button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  color: #fffefb;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04)),
+    rgba(217, 119, 87, 0.68);
+  box-shadow:
+    0 10px 22px rgba(217, 119, 87, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+  transition: transform 140ms ease, filter 140ms ease, box-shadow 140ms ease;
+}
+
+.glass-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+.glass-button:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(1.12);
+}
+
+.glass-button:disabled {
+  opacity: 0.56;
+  cursor: default;
+}
+
+.glass-button.blue {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04)),
+    rgba(106, 155, 204, 0.68);
+  box-shadow:
+    0 10px 22px rgba(106, 155, 204, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
+.menu-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 280px;
+  padding: 8px;
+  z-index: 60;
+}
+
+.menu-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  color: var(--ui-text);
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.menu-item strong,
+.menu-item span {
+  display: block;
+}
+
+.menu-item span {
+  margin-top: 4px;
+  color: var(--ui-text-soft);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.status-strip {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+}
+
+.status-path {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ui-text);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.status-icon {
+  flex-shrink: 0;
+}
+
+.truncate {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-message {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.status-message.success {
+  color: var(--success);
+}
+
+.status-message.error {
+  color: var(--error);
+}
+
+.preview-shell {
+  position: relative;
+  overflow: hidden;
+  min-height: 620px;
+  padding: 14px;
+}
+
+.preview-frame {
+  display: block;
+  width: 100%;
+  height: 70vh;
+  min-height: 620px;
+  border: 0;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(176, 174, 165, 0.5);
+}
+
+.busy-pill {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 18px 40px rgba(20, 20, 19, 0.12);
+  color: var(--ui-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(217, 119, 87, 0.18);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+.runtime-note {
+  padding: 14px 16px;
+  color: var(--ui-text-soft);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    padding: 20px 16px 32px;
+  }
+
+  .header,
+  .status-strip,
+  .preview-shell,
+  .runtime-note,
+  .menu-panel {
+    border-radius: 22px;
+  }
+
+  .header,
+  .status-strip {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .glass-button {
+    flex: 1 1 auto;
+  }
+
+  .status-message {
+    margin-left: 0;
+  }
+
+  .preview-frame {
+    min-height: 520px;
+    height: 62vh;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
