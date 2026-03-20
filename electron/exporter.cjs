@@ -72,15 +72,14 @@ async function prepareExportWindow(exportWindow, documentState) {
   const metrics = await exportWindow.webContents.executeJavaScript(
     `(async () => {
       const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
       async function waitForRendererReady() {
         for (let index = 0; index < 200; index += 1) {
           if (window.CodexRenderer?.renderMarkdownFromSource) {
             return;
           }
-
           await sleep(50);
         }
-
         throw new Error("HTML renderer 尚未準備好。");
       }
 
@@ -99,6 +98,37 @@ async function prepareExportWindow(exportWindow, documentState) {
           ),
           sleep(6000)
         ]);
+      }
+
+      async function waitForStableMetrics(samples = 6, interval = 60) {
+        let last = null;
+        let stableCount = 0;
+
+        for (let i = 0; i < 60; i += 1) {
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+          await sleep(interval);
+
+          const current = window.CodexRenderer.getExportMetrics();
+
+          if (
+            last &&
+            current.width === last.width &&
+            current.contentWidth === last.contentWidth &&
+            current.height === last.height
+          ) {
+            stableCount += 1;
+          } else {
+            stableCount = 0;
+          }
+
+          last = current;
+
+          if (stableCount >= samples) {
+            return current;
+          }
+        }
+
+        return window.CodexRenderer.getExportMetrics();
       }
 
       await waitForRendererReady();
@@ -121,20 +151,33 @@ async function prepareExportWindow(exportWindow, documentState) {
       await waitForImagesReady();
       await sleep(${EXPORT_DELAY_MS});
 
-      const metrics = window.CodexRenderer.getExportMetrics();
-      if (!metrics?.width || !metrics?.height) {
+      const firstMetrics = await waitForStableMetrics();
+
+      if (!firstMetrics?.width || !firstMetrics?.height) {
         throw new Error("無法取得目前文件的內容尺寸。");
       }
 
-      const exportScale = Math.min(1, ${MAX_SINGLE_PAGE_HEIGHT_PX} / metrics.height);
-      window.CodexRenderer.prepareSinglePageExport(metrics.width, metrics.height, {
+      const exportScale = Math.min(1, ${MAX_SINGLE_PAGE_HEIGHT_PX} / firstMetrics.height);
+
+      window.CodexRenderer.prepareSinglePageExport(firstMetrics.width, firstMetrics.height, {
         scale: exportScale,
-        preserveAppearance: true
+        contentWidth: firstMetrics.contentWidth,
+        safeExtraPx: 12
       });
+
       await sleep(80);
+
+      const finalMetrics = await waitForStableMetrics();
+
       return {
-        ...metrics,
-        exportScale
+        width: Math.max(Math.ceil(finalMetrics.width), 1),
+        height: Math.max(Math.ceil(finalMetrics.height), 1),
+        contentWidth: Math.max(Math.ceil(finalMetrics.contentWidth), 1),
+        exportScale,
+        debug: {
+          before: firstMetrics.debug,
+          after: finalMetrics.debug
+        }
       };
     })()`,
     true
@@ -165,11 +208,6 @@ async function printSinglePagePdf(exportWindow, metrics) {
         bottom: 0,
         left: 0,
         right: 0
-      },
-      landscape: metrics.width > metrics.height,
-      pageSize: {
-        width: pxToMicrons(metrics.width * metrics.exportScale),
-        height: pxToMicrons(metrics.height * metrics.exportScale)
       }
     });
   } finally {

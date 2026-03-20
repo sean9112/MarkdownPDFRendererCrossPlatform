@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -25,8 +26,13 @@
       --content-width: 980px;
     }
 
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
 
     html,
     body {
@@ -83,7 +89,9 @@
       background: #ffffff;
     }
 
-    #content > :first-child { margin-top: 0; }
+    #content> :first-child {
+      margin-top: 0;
+    }
 
     #content h1,
     #content h2,
@@ -97,11 +105,31 @@
       margin-bottom: 0.72em;
     }
 
-    #content h1 { font-size: 2.2rem; margin-top: 0.2em; }
-    #content h2 { font-size: 1.6rem; padding-bottom: 0.25rem; border-bottom: 2px solid var(--accent); }
-    #content h3 { font-size: 1.26rem; color: var(--accent-3); }
-    #content h4 { font-size: 1.08rem; color: var(--accent-2); }
-    #content p, #content li { font-size: 1.04rem; }
+    #content h1 {
+      font-size: 2.2rem;
+      margin-top: 0.2em;
+    }
+
+    #content h2 {
+      font-size: 1.6rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 2px solid var(--accent);
+    }
+
+    #content h3 {
+      font-size: 1.26rem;
+      color: var(--accent-3);
+    }
+
+    #content h4 {
+      font-size: 1.08rem;
+      color: var(--accent-2);
+    }
+
+    #content p,
+    #content li {
+      font-size: 1.04rem;
+    }
 
     #content a {
       color: var(--link);
@@ -110,9 +138,20 @@
       text-underline-offset: 2px;
     }
 
-    #content a:hover { text-decoration-color: rgba(217, 119, 87, 0.8); }
-    #content ul, #content ol { padding-left: 1.45rem; }
-    #content hr { border: 0; border-top: 1px solid var(--border); margin: 2rem 0; }
+    #content a:hover {
+      text-decoration-color: rgba(217, 119, 87, 0.8);
+    }
+
+    #content ul,
+    #content ol {
+      padding-left: 1.45rem;
+    }
+
+    #content hr {
+      border: 0;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
 
     #content blockquote {
       margin: 1.25rem 0;
@@ -140,7 +179,9 @@
       vertical-align: top;
     }
 
-    #content th { background: var(--bg-soft); }
+    #content th {
+      background: var(--bg-soft);
+    }
 
     #content img {
       display: block;
@@ -199,16 +240,31 @@
       background: var(--bg-soft);
     }
 
-    .callout.orange { border-left-color: var(--accent); }
+    .callout.orange {
+      border-left-color: var(--accent);
+    }
 
     @media (max-width: 720px) {
-      #content { padding: 24px 16px 32px; }
-      #content h1 { font-size: 1.85rem; }
-      #content h2 { font-size: 1.4rem; }
-      #content p, #content li { font-size: 1rem; }
+      #content {
+        padding: 24px 16px 32px;
+      }
+
+      #content h1 {
+        font-size: 1.85rem;
+      }
+
+      #content h2 {
+        font-size: 1.4rem;
+      }
+
+      #content p,
+      #content li {
+        font-size: 1rem;
+      }
     }
 
     @media print {
+
       html,
       body {
         -webkit-print-color-adjust: exact;
@@ -217,6 +273,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="page-shell">
     <main class="content">
@@ -276,17 +333,17 @@
 
       try {
         candidates.push(new URL(normalized, markdownBaseHref).toString());
-      } catch {}
+      } catch { }
 
       if (sourceRootHref) {
         try {
           candidates.push(new URL(normalized, sourceRootHref).toString());
-        } catch {}
+        } catch { }
 
         if (normalized.startsWith('./')) {
           try {
             candidates.push(new URL(normalized.slice(2), sourceRootHref).toString());
-          } catch {}
+          } catch { }
         }
       }
 
@@ -337,8 +394,11 @@
 
     function ensureExportStyle(width, height, options = {}) {
       const exportScale = Math.min(Math.max(Number(options.scale) || 1, 0.1), 1);
+      const contentWidth = Math.max(Math.ceil(Number(options.contentWidth) || 0), 1);
+      const safeExtraPx = Math.max(Math.ceil(Number(options.safeExtraPx) || 8), 0);
+
       const printedWidth = Math.max(Math.ceil(width * exportScale), 1);
-      const printedHeight = Math.max(Math.ceil(height * exportScale), 1);
+      const printedHeight = Math.max(Math.ceil(height * exportScale) + safeExtraPx, 1);
 
       let style = document.getElementById('codex-single-page-export-style');
       if (!style) {
@@ -370,7 +430,8 @@
 
           .page-shell {
             width: ${Math.ceil(width)}px !important;
-            min-height: ${Math.ceil(height)}px !important;
+            min-height: 0 !important;
+            height: auto !important;
             max-width: none !important;
             margin: 0 !important;
             padding: 20px 16px 40px !important;
@@ -382,8 +443,8 @@
           }
 
           .content {
-            width: min(var(--content-width), calc(100% - 8px)) !important;
-            max-width: none !important;
+            width: ${contentWidth}px !important;
+            max-width: ${contentWidth}px !important;
             margin: 0 auto !important;
             padding: 0 !important;
           }
@@ -496,22 +557,31 @@
     }
 
     function getExportMetrics() {
-      const content = document.getElementById('content');
+      const shell = document.querySelector('.page-shell');
+      const contentWrap = document.querySelector('.content');
       const card = document.querySelector('.render-card');
-      const body = document.body;
-      const html = document.documentElement;
+      const content = document.getElementById('content');
+
+      const shellRect = shell?.getBoundingClientRect();
+      const contentRect = contentWrap?.getBoundingClientRect();
+      const cardRect = card?.getBoundingClientRect();
+
+      const shellScrollHeight = Math.ceil(shell?.scrollHeight || 0);
+      const cardScrollHeight = Math.ceil(card?.scrollHeight || 0);
+      const contentScrollHeight = Math.ceil(content?.scrollHeight || 0);
 
       return {
-        width: window.innerWidth,
-        viewportHeight: window.innerHeight,
-        height: Math.max(
-          html?.scrollHeight || 0,
-          html?.offsetHeight || 0,
-          body?.scrollHeight || 0,
-          body?.offsetHeight || 0,
-          card?.scrollHeight || 0,
-          content?.scrollHeight || 0
-        )
+        width: Math.ceil(shellRect?.width || window.innerWidth),
+        contentWidth: Math.ceil(contentRect?.width || 0),
+        height: Math.ceil(Math.max(shellScrollHeight, cardScrollHeight, contentScrollHeight)),
+        debug: {
+          shellWidth: Math.ceil(shellRect?.width || 0),
+          contentWidth: Math.ceil(contentRect?.width || 0),
+          cardWidth: Math.ceil(cardRect?.width || 0),
+          shellHeight: shellScrollHeight,
+          cardHeight: cardScrollHeight,
+          contentHeight: contentScrollHeight
+        }
       };
     }
 
@@ -753,4 +823,5 @@
     };
   </script>
 </body>
+
 </html>
