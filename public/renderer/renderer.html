@@ -624,16 +624,57 @@
       content.innerHTML = restoreMath(renderedHtml, placeholders);
     }
 
+    function renderMarkdownInsideTableCells() {
+      const markdownPattern = /[`*_~[\]!$]/;
+      const tableCells = content.querySelectorAll('th, td');
+
+      tableCells.forEach((cell) => {
+        if (cell.childElementCount > 0) {
+          return;
+        }
+
+        const markdownSource = cell.textContent?.trim();
+        if (!markdownSource || !markdownPattern.test(markdownSource)) {
+          return;
+        }
+
+        const { protectedMarkdown, placeholders } = protectMath(markdownSource);
+        cell.innerHTML = restoreMath(marked.parseInline(protectedMarkdown), placeholders);
+      });
+    }
+
     function convertMermaidBlocks() {
-      const mermaidCodeBlocks = content.querySelectorAll('pre code.language-mermaid');
+      const mermaidCodeBlocks = content.querySelectorAll('pre > code.language-mermaid, code.language-mermaid');
+      const mermaidNodes = [];
+
       mermaidCodeBlocks.forEach((codeBlock, index) => {
-        const pre = codeBlock.closest('pre');
+        const pre = codeBlock.closest('pre') ?? codeBlock;
         const wrapper = document.createElement('div');
         wrapper.className = 'mermaid';
-        wrapper.id = `mermaid-${index}`;
+        wrapper.id = `mermaid-${index}-${Math.random().toString(36).slice(2, 8)}`;
         wrapper.textContent = codeBlock.textContent;
         pre.replaceWith(wrapper);
+        mermaidNodes.push(wrapper);
       });
+
+      content.querySelectorAll('.mermaid').forEach((node, index) => {
+        if (!node.id) {
+          node.id = `mermaid-existing-${index}-${Math.random().toString(36).slice(2, 8)}`;
+        }
+
+        mermaidNodes.push(node);
+      });
+
+      return [...new Set(mermaidNodes)];
+    }
+
+    async function renderMermaidDiagrams() {
+      const mermaidNodes = convertMermaidBlocks();
+      if (!mermaidNodes.length) {
+        return;
+      }
+
+      await mermaid.run({ nodes: mermaidNodes });
     }
 
     async function waitForMathJax() {
@@ -674,9 +715,9 @@
           setBaseHref(baseHref);
           content.innerHTML = '';
           renderMarkdown(markdownText);
+          renderMarkdownInsideTableCells();
           resolveRelativeAssetURLs(baseHref, sourceRootHref);
-          convertMermaidBlocks();
-          await mermaid.run({ querySelector: '.mermaid' });
+          await renderMermaidDiagrams();
           await waitForMathJax();
           await window.MathJax.typesetPromise([content]);
           return 'ok';

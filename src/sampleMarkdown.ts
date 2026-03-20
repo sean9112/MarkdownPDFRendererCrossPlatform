@@ -30,4 +30,5 @@ flowchart TD
 | 主色 | \`#141413\` |
 | 背景 | \`#FAF9F5\` |
 | Accent | \`#D97757\` |
+| 表格內 Markdown | **粗體**、\`inline code\`、[連結](https://example.com) |
 `;
