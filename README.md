@@ -46,10 +46,22 @@ Package the desktop app:
 npm run package
 ```
 
+Package a raw macOS `.app` bundle:
+
+```bash
+npm run package:mac:app
+```
+
 Package Linux AppImage:
 
 ```bash
 npm run package:linux
+```
+
+Package Windows NSIS `.exe`:
+
+```bash
+npm run package:win:exe
 ```
 
 Remove generated build artifacts:
@@ -63,6 +75,24 @@ npm run clean
 - macOS: `release/`
 - Windows: `release/`
 - Linux AppImage: `release/`
+
+## GitHub Actions
+
+The repository includes [`.github/workflows/build-desktop.yml`](.github/workflows/build-desktop.yml), which builds:
+
+- macOS: raw `.app` bundle
+- Windows: `.exe` installer
+- Linux: `.AppImage`
+
+It runs on `push` to `main`, on pull requests, and via manual `workflow_dispatch`.
+
+After each run, download the artifacts from the Actions page:
+
+- `macos-app`
+- `windows-exe`
+- `linux-appimage`
+
+GitHub stores artifacts as downloadable archives, so the macOS artifact is delivered as an archive containing the `.app` bundle.
 
 ## Project Layout
 
@@ -86,3 +116,4 @@ The export path is intentionally image-based instead of selectable-text PDF so l
 ## Notes
 
 - The desktop icon is sourced from the original Swift app's compiled `AppIcon.icns`.
+- Windows packaging uses `buildResources/icon.ico`, generated from the same source icon for parity across platforms.

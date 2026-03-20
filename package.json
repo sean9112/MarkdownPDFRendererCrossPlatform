@@ -13,9 +13,11 @@
     "preview": "vite preview",
     "start": "electron .",
     "package": "npm run build && electron-builder",
+    "package:mac:app": "npm run build && electron-builder --mac dir",
     "package:linux": "npm run build && electron-builder --linux AppImage",
     "package:mac": "npm run build && electron-builder --mac zip",
-    "package:win": "npm run build && electron-builder --win nsis"
+    "package:win": "npm run build && electron-builder --win nsis",
+    "package:win:exe": "npm run build && electron-builder --win nsis"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
@@ -65,7 +67,7 @@
       "target": [
         "nsis"
       ],
-      "icon": "buildResources/icon.png"
+      "icon": "buildResources/icon.ico"
     }
   }
 }
