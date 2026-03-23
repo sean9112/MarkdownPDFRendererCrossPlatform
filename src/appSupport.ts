@@ -1,3 +1,4 @@
+import { detectAppLocale, getImportItems, getSubtitle, t } from "./i18n";
 import type { ImportKind } from "./types";
 
 export type RendererWindow = Window & {
@@ -10,14 +11,15 @@ export type RendererWindow = Window & {
   };
 };
 
-export const importItems: Array<{ kind: ImportKind; label: string; detail: string }> = [
-  { kind: "markdown", label: "匯入 Markdown", detail: "單一 .md / .markdown 檔案" },
-  { kind: "folder", label: "匯入資料夾", detail: "自動尋找 content.md / index.md / README.md" },
-  { kind: "zip", label: "匯入 ZIP", detail: "解壓後讀取 Markdown 與本地資源" }
-];
+const appLocale = detectAppLocale();
+const messages = t(appLocale);
 
-export const subtitle =
-  "匯入 `.md`，以與 HTML 模板相同的配色渲染 Markdown / LaTeX / Mermaid，再匯出成 PDF。";
+export const appContext = {
+  locale: appLocale,
+  messages,
+  importItems: getImportItems(appLocale),
+  subtitle: getSubtitle(appLocale)
+};
 
 export function isDesktopRuntime() {
   return typeof window !== "undefined" && typeof window.markdownPdfRenderer !== "undefined";
@@ -36,7 +38,7 @@ export async function waitUntilRendererReady(frameWindow: RendererWindow) {
     await delay(100);
   }
 
-  throw new Error("HTML renderer 尚未準備好。");
+  throw new Error(messages.rendererNotReady);
 }
 
 export function installLinkBridge(
@@ -70,7 +72,7 @@ export function installLinkBridge(
         void window.markdownPdfRenderer?.openLink(href).catch((error) => {
           const message = formatErrorMessage(error);
           setLastError(message);
-          setStatusMessage("無法開啟連結");
+          setStatusMessage(messages.openLinkFailed);
         });
       });
     }
@@ -110,3 +112,5 @@ export function formatErrorMessage(error: unknown) {
 function delay(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
+
+export type { ImportKind };

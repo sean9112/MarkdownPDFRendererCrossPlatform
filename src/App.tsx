@@ -1,22 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  appContext,
   basename,
   formatErrorMessage,
-  importItems,
   installLinkBridge,
   isCancelError,
   isDesktopRuntime,
   type RendererWindow,
   stripExtension,
-  subtitle,
   waitUntilRendererReady
 } from "./appSupport";
-import { sampleMarkdown } from "./sampleMarkdown";
+import { getSampleMarkdown } from "./sampleMarkdown";
 import type { ImportKind, ImportedDocument } from "./types";
 
+const { importItems, locale: appLocale, messages, subtitle } = appContext;
+
 const sampleDocument: ImportedDocument = {
-  displayPath: "尚未選擇檔案，正在顯示內建範例內容。",
-  markdownText: sampleMarkdown,
+  displayPath: messages.sampleDisplayPath,
+  markdownText: getSampleMarkdown(appLocale),
   baseHref: "",
   sourceRootHref: ""
 };
@@ -30,11 +31,12 @@ export default function App() {
   const [isFrameLoaded, setIsFrameLoaded] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("載入 `.md` 後即可預覽 Markdown / LaTeX / Mermaid。");
+  const [statusMessage, setStatusMessage] = useState(messages.initialStatus);
   const [lastError, setLastError] = useState<string | null>(null);
 
   const canUseNative = useMemo(() => isDesktopRuntime(), []);
   const busy = isRendering || isExporting;
+  const uiState = getViewModel(documentState, busy, isExporting, lastError);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -67,14 +69,14 @@ export default function App() {
       setLastError(null);
 
       try {
-        setStatusMessage("等待 HTML renderer 就緒...");
+        setStatusMessage(messages.waitRenderer);
         await waitUntilRendererReady(frameWindow);
 
         if (cancelled) {
           return;
         }
 
-        setStatusMessage("渲染 Markdown / LaTeX / Mermaid...");
+        setStatusMessage(messages.renderInProgress);
         const result = await frameWindow.CodexRenderer?.renderMarkdownFromSource(
           documentState.markdownText,
           documentState.baseHref,
@@ -86,12 +88,12 @@ export default function App() {
         }
 
         installLinkBridge(frameWindow, canUseNative, setLastError, setStatusMessage);
-        setStatusMessage("渲染完成，可匯出 PDF。");
+        setStatusMessage(messages.renderDone);
       } catch (error) {
         if (!cancelled) {
           const message = formatErrorMessage(error);
           setLastError(message);
-          setStatusMessage("渲染失敗");
+          setStatusMessage(messages.renderFailed);
         }
       } finally {
         if (!cancelled) {
@@ -111,39 +113,39 @@ export default function App() {
     setIsImportMenuOpen(false);
 
     if (!canUseNative || !window.markdownPdfRenderer) {
-      setLastError("目前不是在 Electron 桌面環境中執行。");
-      setStatusMessage("無法開啟原生匯入面板");
+      setLastError(messages.notDesktop);
+      setStatusMessage(messages.cannotOpenImport);
       return;
     }
 
     try {
-      setStatusMessage("正在讀取來源...");
+      setStatusMessage(messages.readingSource);
       setLastError(null);
       const imported = await window.markdownPdfRenderer.importSource(kind);
       setDocumentState(imported);
-      setStatusMessage(`已載入 ${basename(imported.displayPath)}，準備渲染中。`);
+      setStatusMessage(messages.loadedReady(basename(imported.displayPath)));
     } catch (error) {
       if (isCancelError(error)) {
-        setStatusMessage("已取消匯入。");
+        setStatusMessage(messages.importCanceled);
         return;
       }
 
       const message = formatErrorMessage(error);
       setLastError(message);
-      setStatusMessage("讀取失敗");
+      setStatusMessage(messages.readFailed);
     }
   }
 
   async function handleExport() {
     if (!window.markdownPdfRenderer) {
-      setLastError("目前不是在 Electron 桌面環境中執行。");
-      setStatusMessage("無法匯出 PDF");
+      setLastError(messages.notDesktop);
+      setStatusMessage(messages.cannotExport);
       return;
     }
 
     setIsExporting(true);
     setLastError(null);
-    setStatusMessage("正在以 Chromium 背景渲染 PDF...");
+    setStatusMessage(messages.exportingPdf);
 
     try {
       const defaultFileName = `${stripExtension(basename(documentState.displayPath || "markdown-rendered"))}.pdf`;
@@ -154,15 +156,15 @@ export default function App() {
       });
 
       if (!savePath) {
-        setStatusMessage("已取消匯出。");
+        setStatusMessage(messages.exportCanceled);
         return;
       }
 
-      setStatusMessage(`PDF 已輸出到 ${basename(savePath)}`);
+      setStatusMessage(messages.exportDone(basename(savePath)));
     } catch (error) {
       const message = formatErrorMessage(error);
       setLastError(message);
-      setStatusMessage(`PDF 匯出失敗：${message}`);
+      setStatusMessage(messages.exportFailed(message));
     } finally {
       setIsExporting(false);
     }
@@ -175,10 +177,22 @@ export default function App() {
       <main className="app-frame">
         <header className="header">
           <div className="title-block">
+            <span className="eyebrow">{messages.eyebrow}</span>
             <h1>Markdown PDF Renderer</h1>
             <p>
               <InlineMarkdownText text={subtitle} />
             </p>
+
+            <div className="hero-meta">
+              <div className="meta-chip">
+                <span className="meta-label">{uiState.sourceLabel}</span>
+                <strong>{uiState.documentName}</strong>
+              </div>
+              <div className="meta-chip">
+                <span className="meta-label">{messages.currentStatus}</span>
+                <strong>{uiState.statusLabel}</strong>
+              </div>
+            </div>
           </div>
 
           <div className="actions">
@@ -189,7 +203,7 @@ export default function App() {
                 onClick={() => setIsImportMenuOpen((value) => !value)}
                 type="button"
               >
-                匯入 Markdown / 資料夾 / ZIP
+                {messages.importButton}
               </button>
 
               {isImportMenuOpen ? (
@@ -210,45 +224,103 @@ export default function App() {
             </div>
 
             <button className="glass-button blue" disabled={busy} onClick={() => void handleExport()} type="button">
-              匯出 PDF
+              {messages.exportButton}
             </button>
           </div>
         </header>
 
         <section className="status-strip">
           <div className="status-path">
-            <span className="status-icon">📄</span>
+            <span className="status-icon">{messages.path}</span>
             <span className="truncate">{documentState.displayPath}</span>
           </div>
 
           <div className={`status-message ${lastError ? "error" : "success"}`}>{statusMessage}</div>
         </section>
 
-        <section className="preview-shell">
-          <iframe
-            ref={iframeRef}
-            className="preview-frame"
-            onLoad={() => setIsFrameLoaded(true)}
-            src="renderer/renderer.html"
-            title="Markdown Preview"
-          />
-
-          {busy ? (
-            <div className="busy-pill">
-              <span className="spinner" />
-              <span>{isExporting ? "匯出 PDF 中..." : "重新渲染中..."}</span>
+        <section className="workspace-grid">
+          <aside className="insight-panel">
+            <div className="panel-section panel-lead">
+              <span className="section-kicker">{messages.workflow}</span>
+              <h2>{uiState.helperTitle}</h2>
+              <p>{uiState.helperText}</p>
             </div>
-          ) : null}
+
+            <div className="panel-section">
+              <span className="section-kicker">{messages.threeStepFlow}</span>
+              <ol className="workflow-list">
+                {messages.workflowSteps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="panel-section capability-grid">
+              <div className="capability-card">
+                <span className="capability-label">{messages.input}</span>
+                <strong>{messages.inputValue}</strong>
+              </div>
+              <div className="capability-card">
+                <span className="capability-label">{messages.preview}</span>
+                <strong>{messages.previewValue}</strong>
+              </div>
+              <div className="capability-card">
+                <span className="capability-label">{messages.output}</span>
+                <strong>{messages.outputValue}</strong>
+              </div>
+            </div>
+          </aside>
+
+          <section className="preview-shell">
+            <div className="preview-heading">
+              <div>
+                <span className="section-kicker">{messages.liveCanvas}</span>
+                <h2>{messages.livePreviewTitle}</h2>
+              </div>
+              <p>{messages.livePreviewBody}</p>
+            </div>
+
+            <iframe
+              ref={iframeRef}
+              className="preview-frame"
+              onLoad={() => setIsFrameLoaded(true)}
+              src="renderer/renderer.html"
+              title={messages.previewTitle}
+            />
+
+            {busy ? (
+              <div className="busy-pill">
+                <span className="spinner" />
+                <span>{isExporting ? messages.exportingShort : messages.renderingShort}</span>
+              </div>
+            ) : null}
+          </section>
         </section>
 
         {!canUseNative ? (
-          <section className="runtime-note">
-            目前是在純瀏覽器環境中執行，因此原生檔案匯入、背景 Chromium 匯出與本地檔案開啟功能會停用。請在 Electron 桌面環境下使用完整功能。
-          </section>
+          <section className="runtime-note">{messages.runtimeNote}</section>
         ) : null}
       </main>
     </div>
   );
+}
+
+function getViewModel(documentState: ImportedDocument, busy: boolean, isExporting: boolean, lastError: string | null) {
+  const isSample = documentState.displayPath === sampleDocument.displayPath;
+
+  return {
+    sourceLabel: isSample ? messages.sourceLabelSample : messages.sourceLabelCurrent,
+    documentName: isSample ? messages.sampleDocumentName : stripExtension(basename(documentState.displayPath || "Untitled")),
+    statusLabel: busy ? messages.busyRendering : lastError ? messages.needsAttention : messages.readyToExport,
+    helperTitle: busy ? messages.helperBusy : lastError ? messages.helperNeedsAttention : messages.helperReady,
+    helperText: busy
+      ? isExporting
+        ? messages.helperExporting
+        : messages.helperRendering
+      : lastError
+        ? lastError
+        : messages.helperDefault
+  };
 }
 
 function InlineMarkdownText({ text }: { text: string }) {

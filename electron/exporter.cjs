@@ -2,15 +2,17 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 const { BrowserWindow, dialog } = require("electron");
+const { getElectronMessages } = require("./locale.cjs");
 const MIN_EXPORT_WIDTH = 1100;
 const VIEWPORT_HEIGHT = 1200;
 const EXPORT_DELAY_MS = 160;
 const MAX_SINGLE_PAGE_HEIGHT_PX = 18000;
 
-async function exportPdf(browserWindow, request) {
+async function exportPdf(browserWindow, request, locale = "en") {
+  const messages = getElectronMessages(locale);
   const defaultFileName = request?.defaultFileName || "markdown-rendered.pdf";
   const saveResult = await dialog.showSaveDialog(browserWindow, {
-    title: "匯出 PDF",
+    title: messages.exportPdf,
     defaultPath: defaultFileName,
     filters: [{ name: "PDF", extensions: ["pdf"] }]
   });
@@ -19,12 +21,12 @@ async function exportPdf(browserWindow, request) {
     return null;
   }
 
-  const pdfBytes = await renderDocumentToPdf(request.document, request.preferredWidth);
+  const pdfBytes = await renderDocumentToPdf(request.document, request.preferredWidth, messages);
   await fs.writeFile(saveResult.filePath, pdfBytes);
   return saveResult.filePath;
 }
 
-async function renderDocumentToPdf(documentState, preferredWidth) {
+async function renderDocumentToPdf(documentState, preferredWidth, messages) {
   const exportWidth = Math.max(Math.ceil(preferredWidth || 0), MIN_EXPORT_WIDTH);
   const exportWindow = new BrowserWindow({
     show: false,
@@ -43,7 +45,7 @@ async function renderDocumentToPdf(documentState, preferredWidth) {
 
   try {
     await exportWindow.loadURL(getRendererUrl());
-    const metrics = await prepareExportWindow(exportWindow, documentState);
+    const metrics = await prepareExportWindow(exportWindow, documentState, messages);
     return await printSinglePagePdf(exportWindow, metrics);
   } finally {
     if (!exportWindow.isDestroyed()) {
@@ -62,7 +64,7 @@ function getRendererUrl() {
   return pathToFileURL(path.join(__dirname, "..", "dist", "renderer", "renderer.html")).toString();
 }
 
-async function prepareExportWindow(exportWindow, documentState) {
+async function prepareExportWindow(exportWindow, documentState, messages) {
   const payload = {
     markdown: documentState.markdownText,
     baseHref: documentState.baseHref,
@@ -80,7 +82,7 @@ async function prepareExportWindow(exportWindow, documentState) {
           }
           await sleep(50);
         }
-        throw new Error("HTML renderer 尚未準備好。");
+        throw new Error(${serializeForBrowser(messages.rendererNotReady)});
       }
 
       async function waitForImagesReady() {
@@ -141,7 +143,7 @@ async function prepareExportWindow(exportWindow, documentState) {
       );
 
       if (result !== "ok") {
-        throw new Error("Chromium renderer 渲染失敗。");
+        throw new Error(${serializeForBrowser(messages.chromiumRenderFailed)});
       }
 
       if (document.fonts?.ready) {
@@ -154,7 +156,7 @@ async function prepareExportWindow(exportWindow, documentState) {
       const firstMetrics = await waitForStableMetrics();
 
       if (!firstMetrics?.width || !firstMetrics?.height) {
-        throw new Error("無法取得目前文件的內容尺寸。");
+        throw new Error(${serializeForBrowser(messages.metricsUnavailable)});
       }
 
       const exportScale = Math.min(1, ${MAX_SINGLE_PAGE_HEIGHT_PX} / firstMetrics.height);
@@ -222,10 +224,6 @@ async function printSinglePagePdf(exportWindow, metrics) {
 
 function serializeForBrowser(value) {
   return JSON.stringify(value).replace(/</g, "\\u003c");
-}
-
-function pxToMicrons(value) {
-  return Math.max(Math.round((value / 96) * 25400), 353);
 }
 
 module.exports = {

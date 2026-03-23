@@ -1,24 +1,23 @@
-# MarkdownPDFRendererCrossPlatform
+# Markdown PDF Renderer
 
-Electron + Chromium rewrite of the original macOS Swift app, keeping the renderer template, palette, layout hierarchy, and single-page PDF export model as closely as possible.
+Cross-platform Electron rewrite of the original macOS Swift `MarkdownPDFRenderer`, preserving the existing HTML renderer template, visual tone, and single-page PDF export model while making the app runnable on macOS, Windows, and Linux.
 
-## Current Stack
-
-- Desktop shell: Electron
-- Renderer: Chromium
-- UI: React + TypeScript + Vite
-- Import / export host: Electron main process
-- Markdown renderer: reused `renderer.html` from the original macOS Swift app
-
-## Current Features
+## Highlights
 
 - Import a single `.md` / `.markdown` file
-- Import a folder and auto-detect `content.md` / `index.md` / `README.md`
-- Import a `.zip` archive and extract it to a temporary workspace
-- Preview Markdown / LaTeX / Mermaid with the original HTML template
-- Resolve local relative assets through the original renderer base-path logic
-- Open local linked files and external links through the OS default handler
-- Export a single-page image-based PDF through a hidden Chromium window
+- Import a folder and auto-detect `content.md`, `index.md`, or `README.md`
+- Import a `.zip` archive into a temporary workspace
+- Preview Markdown, LaTeX, Mermaid, and relative local assets with the reused renderer template
+- Open external links and local file links through the OS default handler
+- Export a single-page Chromium-rendered PDF
+- Automatically use Traditional Chinese (`zh-TW`) for Chinese environments and English for all other locales
+
+## Stack
+
+- Electron main process for native file dialogs, file opening, and PDF export
+- React + TypeScript + Vite for the desktop UI shell
+- Reused `public/renderer/renderer.html` from the original Swift app for the Markdown rendering surface
+- `electron-builder` for desktop packaging
 
 ## Scripts
 
@@ -28,10 +27,16 @@ Install dependencies:
 npm install
 ```
 
-Run the Electron app in development:
+Run the app in development:
 
 ```bash
 npm run dev
+```
+
+Run the main verification step:
+
+```bash
+npm run check
 ```
 
 Build the renderer bundle:
@@ -70,50 +75,27 @@ Remove generated build artifacts:
 npm run clean
 ```
 
-## Packaging Outputs
-
-- macOS: `release/`
-- Windows: `release/`
-- Linux AppImage: `release/`
-
-## GitHub Actions
-
-The repository includes [`.github/workflows/build-desktop.yml`](.github/workflows/build-desktop.yml), which builds:
-
-- macOS: raw `.app` bundle
-- Windows: `.exe` installer
-- Linux: `.AppImage`
-
-It runs on `push` to `main`, on pull requests, and via manual `workflow_dispatch`.
-
-After each run, download the artifacts from the Actions page:
-
-- `macos-app`
-- `windows-exe`
-- `linux-appimage`
-
-GitHub stores artifacts as downloadable archives, so the macOS artifact is delivered as an archive containing the `.app` bundle.
-
 ## Project Layout
 
-- `electron/`
-  Electron main process, preload bridge, native import flow, and Chromium PDF export.
 - `src/`
-  React UI that mirrors the original `MarkdownPDFRenderer` layout and status flow.
+  React UI shell, locale-aware copy, shared types, and entrypoint bootstrap.
+- `electron/`
+  Electron main process, preload bridge, native import flow, locale-aware dialog copy, and hidden-window PDF export.
 - `public/renderer/renderer.html`
-  Original renderer template copied from the Swift project.
+  Original renderer template reused from the Swift version.
 - `buildResources/`
-  Packaged application icons reused from the original Swift build.
-- `Scripts/build-appimage.sh`
-  Convenience wrapper for Linux AppImage packaging.
+  App icons for packaged desktop builds.
 - `Scripts/clean.mjs`
-  Removes generated build artifacts and stray `.DS_Store` files.
+  Removes generated artifacts and stray `.DS_Store` files.
+- `sdd.md`
+  Design and maintenance notes for future changes.
 
-## Tradeoff
+## Packaging Output
 
-The export path is intentionally image-based instead of selectable-text PDF so long Markdown documents can remain on one page without Chromium pagination splitting the output.
+Generated desktop artifacts are written to `release/`.
 
 ## Notes
 
-- The desktop icon is sourced from the original Swift app's compiled `AppIcon.icns`.
-- Windows packaging uses `buildResources/icon.ico`, generated from the same source icon for parity across platforms.
+- PDF export is intentionally image-based instead of selectable-text PDF so long documents can remain on a single page.
+- The current locale strategy is intentionally simple: any `zh-*` environment becomes `zh-TW`; everything else becomes English.
+- If you are continuing work on this project later, read `sdd.md` first before tracing the whole codebase again.

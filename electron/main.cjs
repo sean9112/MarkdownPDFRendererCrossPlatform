@@ -1,10 +1,12 @@
 const path = require("node:path");
 const { fileURLToPath } = require("node:url");
 const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { getSystemLocale } = require("./locale.cjs");
 const { importSource } = require("./importer.cjs");
 const { exportPdf } = require("./exporter.cjs");
 
 let mainWindow = null;
+let appLocale = "en";
 
 function createMainWindow() {
   mainWindow = new BrowserWindow({
@@ -56,14 +58,16 @@ async function openLink(target) {
 }
 
 app.whenReady().then(() => {
+  appLocale = getSystemLocale(app);
+
   ipcMain.handle("app:import-source", async (event, kind) => {
     const browserWindow = BrowserWindow.fromWebContents(event.sender) ?? mainWindow;
-    return importSource(browserWindow, kind);
+    return importSource(browserWindow, kind, appLocale);
   });
 
   ipcMain.handle("app:export-pdf", async (event, request) => {
     const browserWindow = BrowserWindow.fromWebContents(event.sender) ?? mainWindow;
-    return exportPdf(browserWindow, request);
+    return exportPdf(browserWindow, request, appLocale);
   });
 
   ipcMain.handle("app:open-link", async (_event, target) => {

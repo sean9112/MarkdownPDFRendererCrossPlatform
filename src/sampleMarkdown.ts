@@ -1,4 +1,8 @@
-export const sampleMarkdown = String.raw`# Markdown PDF Renderer
+import type { AppLocale } from "./i18n";
+
+export function getSampleMarkdown(locale: AppLocale) {
+  return locale === "zh-TW"
+    ? String.raw`# Markdown PDF Renderer
 
 這是內建範例，可直接測試 Markdown、LaTeX 與 Mermaid 的預覽與 PDF 匯出。
 
@@ -31,4 +35,39 @@ flowchart TD
 | 背景 | \`#FAF9F5\` |
 | Accent | \`#D97757\` |
 | 表格內 Markdown | **粗體**、\`inline code\`、[連結](https://example.com) |
+`
+    : String.raw`# Markdown PDF Renderer
+
+This built-in sample lets you quickly test Markdown, LaTeX, Mermaid preview, and PDF export.
+
+## LaTeX
+
+Inline formula: $E = mc^2$
+
+Block formula:
+
+$$
+J(\theta) = \sum_{i=1}^{n}\left(y_i - \hat{y}_i\right)^2
+$$
+
+## Mermaid
+
+~~~mermaid
+flowchart TD
+    A[Choose Markdown] --> B[Convert to HTML]
+    B --> C[MathJax renders formulas]
+    B --> D[Mermaid renders diagrams]
+    C --> E[Export PDF]
+    D --> E
+~~~
+
+## Table
+
+| Item | Description |
+| --- | --- |
+| Primary color | \`#141413\` |
+| Background | \`#FAF9F5\` |
+| Accent | \`#D97757\` |
+| Markdown in tables | **bold text**, \`inline code\`, and [links](https://example.com) |
 `;
+}

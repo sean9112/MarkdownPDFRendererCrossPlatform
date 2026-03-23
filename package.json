@@ -8,6 +8,7 @@
   "main": "electron/main.cjs",
   "scripts": {
     "clean": "node ./Scripts/clean.mjs",
+    "check": "npm run build",
     "dev": "concurrently -k \"vite --host 127.0.0.1 --port 1420\" \"wait-on http://127.0.0.1:1420 && cross-env ELECTRON_RENDERER_URL=http://127.0.0.1:1420 electron .\"",
     "build": "tsc && vite build",
     "preview": "vite preview",
@@ -21,21 +22,21 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "@types/node": "^24.6.0",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.3",
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
-    "electron": "^37.3.1",
+    "electron": "^41.0.3",
     "electron-builder": "^26.0.12",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.10",
-    "wait-on": "^8.0.5"
+    "typescript": "^5.9.3",
+    "vite": "^8.0.1",
+    "wait-on": "^9.0.4"
   },
   "build": {
     "appId": "com.sean9112.markdownpdfrendererx",

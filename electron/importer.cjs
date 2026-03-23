@@ -5,24 +5,26 @@ const crypto = require("node:crypto");
 const { pathToFileURL } = require("node:url");
 const { dialog } = require("electron");
 const AdmZip = require("adm-zip");
+const { getElectronMessages } = require("./locale.cjs");
 
 const markdownExtensions = new Set([".md", ".markdown"]);
 const preferredMarkdownNames = new Set(["content.md", "index.md", "readme.md"]);
 
-async function importSource(browserWindow, kind) {
-  const selectedPath = await selectSource(browserWindow, kind);
+async function importSource(browserWindow, kind, locale = "en") {
+  const messages = getElectronMessages(locale);
+  const selectedPath = await selectSource(browserWindow, kind, messages);
   if (!selectedPath) {
     throw new Error("__CANCELLED__");
   }
 
-  return loadImportedMarkdown(selectedPath);
+  return loadImportedMarkdown(selectedPath, messages);
 }
 
-async function selectSource(browserWindow, kind) {
+async function selectSource(browserWindow, kind, messages) {
   if (kind === "folder") {
     const result = await dialog.showOpenDialog(browserWindow, {
       properties: ["openDirectory"],
-      title: "選擇資料夾"
+      title: messages.chooseFolder
     });
     return result.canceled ? null : result.filePaths[0];
   }
@@ -30,21 +32,21 @@ async function selectSource(browserWindow, kind) {
   const filters =
     kind === "zip"
       ? [{ name: "ZIP", extensions: ["zip"] }]
-      : [{ name: "Markdown", extensions: ["md", "markdown"] }];
+      : [{ name: messages.markdownFilter, extensions: ["md", "markdown"] }];
 
   const result = await dialog.showOpenDialog(browserWindow, {
     properties: ["openFile"],
-    title: kind === "zip" ? "選擇 ZIP" : "選擇 Markdown",
+    title: kind === "zip" ? messages.chooseZip : messages.chooseMarkdown,
     filters
   });
 
   return result.canceled ? null : result.filePaths[0];
 }
 
-function loadImportedMarkdown(selectedPath) {
+function loadImportedMarkdown(selectedPath, messages) {
   const absolutePath = path.resolve(selectedPath);
   const stat = fs.statSync(absolutePath);
-  const { markdownPath, sourceRootPath } = resolveMarkdownSource(absolutePath, stat);
+  const { markdownPath, sourceRootPath } = resolveMarkdownSource(absolutePath, stat, messages);
   const baseDirectoryPath = path.dirname(markdownPath);
   const markdownText = readMarkdown(markdownPath);
 
@@ -56,18 +58,18 @@ function loadImportedMarkdown(selectedPath) {
   };
 }
 
-function resolveMarkdownSource(absolutePath, stat) {
+function resolveMarkdownSource(absolutePath, stat, messages) {
   if (stat.isDirectory()) {
     return {
-      markdownPath: findPrimaryMarkdown(absolutePath),
+      markdownPath: findPrimaryMarkdown(absolutePath, messages),
       sourceRootPath: absolutePath
     };
   }
 
   if (path.extname(absolutePath).toLowerCase() === ".zip") {
-    const extractedRootPath = extractZipToTempDirectory(absolutePath);
+    const extractedRootPath = extractZipToTempDirectory(absolutePath, messages);
     return {
-      markdownPath: findPrimaryMarkdown(extractedRootPath),
+      markdownPath: findPrimaryMarkdown(extractedRootPath, messages),
       sourceRootPath: extractedRootPath
     };
   }
@@ -78,12 +80,12 @@ function resolveMarkdownSource(absolutePath, stat) {
   };
 }
 
-function findPrimaryMarkdown(rootPath) {
+function findPrimaryMarkdown(rootPath, messages) {
   const candidates = [];
   walkMarkdownFiles(rootPath, candidates);
 
   if (!candidates.length) {
-    throw new Error("在匯入的資料夾或壓縮檔中找不到 `.md` 檔案。");
+    throw new Error(messages.noMarkdownFound);
   }
 
   candidates.sort((left, right) => left.localeCompare(right, "en"));
@@ -145,7 +147,7 @@ function tryDecode(buffer, encoding) {
   }
 }
 
-function extractZipToTempDirectory(zipPath) {
+function extractZipToTempDirectory(zipPath, messages) {
   const extractionRoot = path.join(os.tmpdir(), "MarkdownPDFRendererElectron", crypto.randomUUID());
 
   try {
@@ -154,7 +156,7 @@ function extractZipToTempDirectory(zipPath) {
     archive.extractAllTo(extractionRoot, true);
     return extractionRoot;
   } catch (error) {
-    throw new Error(`壓縮檔解壓失敗：${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(messages.unzipFailed(error instanceof Error ? error.message : String(error)));
   }
 }
 
